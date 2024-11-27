@@ -27,6 +27,11 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	//s3 연동
+	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
+	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.1.1")
+	//mysql 연동
+	runtimeOnly 'com.mysql:mysql-connector-j'
 }
 
 kotlin {
