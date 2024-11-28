@@ -21,7 +21,7 @@ class BucketService(
         val putObjectRequest = PutObjectRequest.builder() //업로드
                 .bucket(bucketName)
                 .key(objectName)
-                .contentType("image/jpg") // 이미지 확장자를 여러 개로 정해야 할 듯.
+                .contentType("image/jpeg") // 이미지 확장자를 여러 개로 정해야 할 듯.
                 .build()
 
         val preSignRequest = PutObjectPresignRequest.builder()
@@ -40,7 +40,7 @@ class BucketService(
                 .build()
 
         val preSignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(60)) // URL 기한을 5분으로 설정
+                .signatureDuration(Duration.ofMinutes(5)) // URL 기한을 5분으로 설정
                 .getObjectRequest(getObjectRequest)
                 .build()
 

@@ -4,9 +4,12 @@ import com.example.Spring_Study_Presigned_URL.DTO.ResponseDTO
 import com.example.Spring_Study_Presigned_URL.S3.DTO.request.GetPresignedUrlRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("/presigned")
@@ -17,8 +20,12 @@ class BucketPresignedController(
     @PutMapping
     fun getPresignedUrlForUpload(): ResponseEntity<ResponseDTO> {
 
+        val currentTimestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+        val objectName = "$currentTimestamp.jpg"
+
         val getPresignedUrlRequestDTO = GetPresignedUrlRequest(
-            url = bucketService.getPresigndUrlForUpload("test-file")
+                url = bucketService.getPresigndUrlForUpload(objectName),
+                objectName = objectName
         )
 
         val responseDTO = ResponseDTO(
@@ -29,11 +36,12 @@ class BucketPresignedController(
         return ResponseEntity.ok().body(responseDTO)
     }
 
-    @GetMapping
-    fun getPresignedUrlForDownload(): ResponseEntity<ResponseDTO> {
+    @GetMapping("/{objectName}")
+    fun getPresignedUrlForDownload(@PathVariable objectName: String): ResponseEntity<ResponseDTO> {
 
         val getPresignedUrlRequestDTO = GetPresignedUrlRequest(
-                url = bucketService.getPresigndUrlForDownload("test-file")
+                url = bucketService.getPresigndUrlForDownload(objectName),
+                objectName = objectName
         )
 
         val responseDTO = ResponseDTO(

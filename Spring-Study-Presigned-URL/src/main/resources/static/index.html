@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>S3 Presigned URL Test</title>
+</head>
+<body>
+<h1>Presigned URL Test</h1>
+
+<!-- 업로드 테스트 폼 -->
+<section>
+    <h2>Upload Test</h2>
+    <input type="file" id="upload-file-input">
+    <button id="upload-btn">Upload File</button>
+    <p id="generated-file-name"></p> <!-- 생성된 파일 이름 표시 -->
+    <p id="upload-status"></p>
+</section>
+<hr>
+
+<!-- 다운로드 테스트 폼 -->
+<section>
+    <h2>Download Test</h2>
+    <input type="text" id="download-file-name" placeholder="Enter file name (e.g., 20241128185153.jpg)">
+    <button id="download-btn">Download File</button>
+    <p id="download-status"></p>
+</section>
+
+<script>
+    //업로드 테스트 로직
+    const uploadFileInput = document.getElementById('upload-file-input');
+    const uploadButton = document.getElementById('upload-btn');
+    const generatedFileNameDisplay = document.getElementById('generated-file-name');
+    const uploadStatus = document.getElementById('upload-status');
+
+    uploadButton.addEventListener('click', async () => {
+        const file = uploadFileInput.files[0];
+
+        if (!file) {
+            uploadStatus.textContent = "No file selected.";
+            return;
+        }
+
+        try {
+            // Presigned URL 요청
+            const presignedResponse = await fetch('http://localhost:8080/presigned', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ contentType: file.type }),
+            });
+
+            if (!presignedResponse.ok) {
+                throw new Error(`Failed to get Presigned URL: ${presignedResponse.status}`);
+            }
+
+            const presignedData = await presignedResponse.json();
+            const presignedUrl = presignedData.result.url;
+            const fileName = presignedData.result.objectName; // 생성된 파일 이름
+
+            // HTML에 생성된 파일 이름 출력
+            generatedFileNameDisplay.textContent = `Generated File Name: ${fileName}`;
+
+            // Presigned URL로 파일 업로드
+            const uploadResponse = await fetch(presignedUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': file.type,
+                },
+                body: file,
+            });
+
+            if (uploadResponse.ok) {
+                uploadStatus.textContent = `File uploaded successfully: ${fileName}`;
+            } else {
+                throw new Error(`Failed to upload file: ${uploadResponse.status}`);
+            }
+        } catch (error) {
+            uploadStatus.textContent = `Error during upload: ${error.message}`;
+        }
+    });
+
+    // 다운로드 테스트 로직
+    const downloadFileNameInput = document.getElementById('download-file-name');
+    const downloadButton = document.getElementById('download-btn');
+    const downloadStatus = document.getElementById('download-status');
+
+    downloadButton.addEventListener('click', async () => {
+        const fileName = downloadFileNameInput.value;
+
+        if (!fileName) {
+            downloadStatus.textContent = "No file name entered.";
+            return;
+        }
+
+        try {
+            // Presigned URL 요청
+            const presignedResponse = await fetch(`http://localhost:8080/presigned/${fileName}`, {
+                method: 'GET',
+            });
+
+            if (!presignedResponse.ok) {
+                throw new Error(`Failed to get Presigned URL for download: ${presignedResponse.status}`);
+            }
+
+            const presignedData = await presignedResponse.json();
+            const presignedUrl = presignedData.result.url;
+
+            // 다운로드 수행
+            window.open(presignedUrl, '_blank');
+            downloadStatus.textContent = `Download initiated for file: ${fileName}`;
+        } catch (error) {
+            downloadStatus.textContent = `Error during download: ${error.message}`;
+        }
+    });
+</script>
+</body>
+</html>
