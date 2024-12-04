@@ -25,7 +25,7 @@ class BucketService(
                 .build()
 
         val preSignRequest = PutObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(60)) // URL 기한을 5분으로 설정
+                .signatureDuration(Duration.ofMinutes(5)) // URL 기한을 5분으로 설정
                 .putObjectRequest(putObjectRequest)
                 .build()
 
