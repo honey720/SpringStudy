@@ -1,10 +1,7 @@
 package com.example.Spring_Study_Presigned_URL.S3
 
 import com.example.Spring_Study_Presigned_URL.DTO.ResponseDTO
-import com.example.Spring_Study_Presigned_URL.S3.DTO.request.S3UploadAbortRequest
-import com.example.Spring_Study_Presigned_URL.S3.DTO.request.S3UploadCompleteRequest
-import com.example.Spring_Study_Presigned_URL.S3.DTO.request.S3UploadInitiateRequest
-import com.example.Spring_Study_Presigned_URL.S3.DTO.request.S3UploadCreatePresignedUrlRequest
+import com.example.Spring_Study_Presigned_URL.S3.DTO.request.*
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -26,12 +23,12 @@ class S3Controller(
     }
 
     @PostMapping("/presigned-url")
-    fun createUploadPresignedUrl(@RequestBody s3UploadCreatePresignedUrlRequest: S3UploadCreatePresignedUrlRequest): ResponseEntity<ResponseDTO> {
+    fun getUploadPresignedUrl(@RequestBody s3UploadPresignedUrlRequest: S3UploadPresignedUrlRequest): ResponseEntity<ResponseDTO> {
 
         val responseDTO = ResponseDTO(
                 isSuccess = true,
                 stateCode = 200,
-                result = s3Service.createUploadPreSignedUrl(s3UploadCreatePresignedUrlRequest)
+                result = s3Service.getUploadPreSignedUrl(s3UploadPresignedUrlRequest)
         )
 
         return ResponseEntity.ok().body(responseDTO)
@@ -56,6 +53,18 @@ class S3Controller(
                 isSuccess = true,
                 stateCode = 200,
                 result = s3Service.abortUpload(s3UploadAbortRequest)
+        )
+
+        return ResponseEntity.ok().body(responseDTO)
+    }
+
+    @DeleteMapping("/delete")
+    fun delete(@RequestBody s3DeleteRequest: S3DeleteRequest): ResponseEntity<ResponseDTO> {
+
+        val responseDTO = ResponseDTO(
+                isSuccess = true,
+                stateCode = 200,
+                result = s3Service.deleteObject(s3DeleteRequest)
         )
 
         return ResponseEntity.ok().body(responseDTO)

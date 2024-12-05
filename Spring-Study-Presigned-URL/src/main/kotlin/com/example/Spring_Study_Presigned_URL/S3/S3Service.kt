@@ -1,9 +1,6 @@
 package com.example.Spring_Study_Presigned_URL.S3
 
-import com.example.Spring_Study_Presigned_URL.S3.DTO.request.S3UploadAbortRequest
-import com.example.Spring_Study_Presigned_URL.S3.DTO.request.S3UploadCompleteRequest
-import com.example.Spring_Study_Presigned_URL.S3.DTO.request.S3UploadInitiateRequest
-import com.example.Spring_Study_Presigned_URL.S3.DTO.request.S3UploadCreatePresignedUrlRequest
+import com.example.Spring_Study_Presigned_URL.S3.DTO.request.*
 import com.example.Spring_Study_Presigned_URL.S3.DTO.response.S3UploadCompleteResponse
 import com.example.Spring_Study_Presigned_URL.S3.DTO.response.S3UploadInitiateResponse
 import com.example.Spring_Study_Presigned_URL.S3.DTO.response.S3UploadCreatePresignedUrlResponse
@@ -12,13 +9,13 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest
-import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
 import software.amazon.awssdk.services.s3.model.CompletedPart
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.UploadPartRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
@@ -67,7 +64,7 @@ class S3Service(
         )
     }
 
-    fun createUploadPreSignedUrl(s3UploadCreatePresignedUrlRequest: S3UploadCreatePresignedUrlRequest): S3UploadCreatePresignedUrlResponse {
+    fun getUploadPreSignedUrl(s3UploadPresignedUrlRequest: S3UploadPresignedUrlRequest): S3UploadCreatePresignedUrlResponse {
 
         //Presigned URL 기한 설정
         val expiration = Duration.ofMinutes(10)
@@ -75,9 +72,9 @@ class S3Service(
         //S3에 Presigned URL 요청할 정보 저장
         val uploadPartRequest: UploadPartRequest = UploadPartRequest.builder()
                 .bucket(bucketName)
-                .key(s3UploadCreatePresignedUrlRequest.key)
-                .uploadId(s3UploadCreatePresignedUrlRequest.uploadId)
-                .partNumber(s3UploadCreatePresignedUrlRequest.partNumber)
+                .key(s3UploadPresignedUrlRequest.key)
+                .uploadId(s3UploadPresignedUrlRequest.uploadId)
+                .partNumber(s3UploadPresignedUrlRequest.partNumber)
                 .build()
 
         //S3에 Presigned URL을 요청할 양식을 작성
@@ -92,8 +89,8 @@ class S3Service(
         //응답 DTO 생성 및 반환
         return S3UploadCreatePresignedUrlResponse(
                 presignedUrl = presignedUploadPartRequest.url().toString(),
-                uploadId = s3UploadCreatePresignedUrlRequest.uploadId,
-                partNumber = s3UploadCreatePresignedUrlRequest.partNumber,
+                uploadId = s3UploadPresignedUrlRequest.uploadId,
+                partNumber = s3UploadPresignedUrlRequest.partNumber,
                 expiration = expiration
         )
     }
@@ -137,14 +134,30 @@ class S3Service(
     }
 
     fun abortUpload(s3UploadAbortRequest: S3UploadAbortRequest) {
-
+        //멀티파트 업로드 취소 요청할 양식을 작성
         val abortMultipartUploadRequest: AbortMultipartUploadRequest = AbortMultipartUploadRequest.builder()
                 .bucket(bucketName)
                 .key(s3UploadAbortRequest.key)
                 .uploadId(s3UploadAbortRequest.uploadId)
                 .build()
 
+        //멀티파트 업로드 취소 요청
         s3Client.abortMultipartUpload(abortMultipartUploadRequest)
+    }
+
+    fun deleteObject(s3DeleteRequest: S3DeleteRequest) {
+
+        //S3 객체 url에서 key 추출
+        val objectName: String = s3DeleteRequest.url.split("/").drop(3).joinToString("/")
+
+        //S3 객체 삭제 요청을 위한 양식을 작성
+        val deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectName)
+                .build()
+
+        //S3 객체 삭제 요청
+        s3Client.deleteObject(deleteObjectRequest)
     }
 
     fun getFileSizeFromS3Url(bucketName: String, fileName: String): Long {
