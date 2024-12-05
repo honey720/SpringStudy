@@ -32,7 +32,9 @@ class S3Service(
         @Value("\${aws.s3.bucket}")
         private val bucketName: String,
         private val s3Client: S3Client,
-        private val s3Presigner: S3Presigner
+        private val s3Presigner: S3Presigner,
+        @Value("\${cloudfront.domain}")
+        private var cloudFrontDomain: String
         //jwt 정보도 추가
 ) {
 
@@ -48,7 +50,7 @@ class S3Service(
                 "fileSize" to s3UploadInitiateRequest.fileSize.toString()
         )
 
-        //CreateMultipartUploadRequest 생성 (메타데이터 포함)
+        //S3에 멀티파트 업로드를 요청할 양식을 작성
         val createMultipartUploadRequest: CreateMultipartUploadRequest = CreateMultipartUploadRequest.builder()
                 .bucket(bucketName)
                 .key(targetObjectDir)
@@ -78,13 +80,13 @@ class S3Service(
                 .partNumber(s3UploadCreatePresignedUrlRequest.partNumber)
                 .build()
 
-        //S3에 Presigned URL 요청
+        //S3에 Presigned URL을 요청할 양식을 작성
         val uploadPartPresignRequest: UploadPartPresignRequest = UploadPartPresignRequest.builder()
                 .signatureDuration(expiration)
                 .uploadPartRequest(uploadPartRequest)
                 .build()
 
-        //클라이언트에서 S3로 직접 업로드하기 위해 사용할 Presigned URL을 받는다.
+        //클라이언트에서 S3로 직접 업로드하기 위해 사용할 Presigned URL를 요청
         val presignedUploadPartRequest: PresignedUploadPartRequest = s3Presigner.presignUploadPart(uploadPartPresignRequest)
 
         //응답 DTO 생성 및 반환
@@ -97,7 +99,7 @@ class S3Service(
     }
 
     fun completeUpload(s3UploadCompleteRequest: S3UploadCompleteRequest): S3UploadCompleteResponse {
-
+        //하나의 컨텐츠에 대한 모든 부분들에 partNumber와 Etag를 설정함
         val completedPart = s3UploadCompleteRequest.parts.map { partForm ->
             CompletedPart.builder()
                     .partNumber(partForm.partNumber)
@@ -105,10 +107,12 @@ class S3Service(
                     .build()
         }
 
+        //멀티파트 업로드 완료 요청할 양식중 멀티파트에 해당하는 양식을 작성
         val completedMultipartUpload: CompletedMultipartUpload = CompletedMultipartUpload.builder()
                 .parts(completedPart)
                 .build()
 
+        //멀티파트 업로드 완료 요청할 양식을 작성
         val completeMultipartUploadRequest: CompleteMultipartUploadRequest = CompleteMultipartUploadRequest.builder()
                 .bucket(bucketName)
                 .key(s3UploadCompleteRequest.key)
@@ -116,13 +120,15 @@ class S3Service(
                 .multipartUpload(completedMultipartUpload)
                 .build()
 
+        //멀티파트 업로드 완료 요청
         val completeMultipartUploadResponse: CompleteMultipartUploadResponse = s3Client.completeMultipartUpload(completeMultipartUploadRequest)
 
         val objectKey: String = completeMultipartUploadResponse.key()
-        val url: String = completeMultipartUploadResponse.location()
+        val url: String = cloudFrontDomain + "/" + objectKey
         val bucket: String = completeMultipartUploadResponse.bucket()
         val fileSize: Long = getFileSizeFromS3Url(bucket, objectKey)
 
+        //응답 DTO 생성 및 반환
         return S3UploadCompleteResponse(
                 fileName = objectKey,
                 url = url,
