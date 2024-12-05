@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.PresignedUploadPartRequest
 import software.amazon.awssdk.services.s3.presigner.model.UploadPartPresignRequest
 import java.time.Duration
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -91,7 +92,7 @@ class S3Service(
                 presignedUrl = presignedUploadPartRequest.url().toString(),
                 uploadId = s3UploadPresignedUrlRequest.uploadId,
                 partNumber = s3UploadPresignedUrlRequest.partNumber,
-                expiration = expiration
+                expiration = LocalDateTime.now().plus(expiration)
         )
     }
 
